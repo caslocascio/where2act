@@ -19,6 +19,10 @@ from pointnet2_ops.pointnet2_utils import furthest_point_sample
 import matplotlib.pyplot as plt
 cmap = plt.cm.get_cmap("jet")
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE_DIR, 'blender_utils'))
+import blender_utils.render_using_blender as render_utils
+
 # test parameters
 parser = ArgumentParser()
 parser.add_argument('--exp_name', type=str, help='name of the training run')
@@ -109,11 +113,10 @@ while still_timesteps < 5000 and wait_timesteps < 20000:
     cur_qpos = cur_new_qpos
     wait_timesteps += 1
 
-if still_timesteps < 5000:
-    printout(flog, 'Object Not Still!')
-    flog.close()
-    env.close()
-    exit(1)
+# if still_timesteps < 5000:
+#     print('Object Not Still!')
+#     env.close()
+#     exit(1)
 
 ### use the GT vision
 rgb, depth = cam.get_observation()
@@ -220,6 +223,7 @@ dirs2 = forward.repeat(train_conf.num_point_per_shape, 1)
 # infer for all pixels
 with torch.no_grad():
     input_queries = torch.cat([dirs1, dirs2], dim=1)
+    print(input_queries)
     net = network.critic(feats, input_queries)
     result = torch.sigmoid(net).cpu().numpy()
     result *= pc_movable
@@ -230,7 +234,7 @@ with torch.no_grad():
     utils.export_pts_color_pts(fn,  pc[0].cpu().numpy(), pccolors)
     utils.export_pts_color_obj(fn,  pc[0].cpu().numpy(), pccolors)
     utils.render_pts_label_png(fn,  pc[0].cpu().numpy(), result)
-
+    #render_utils.render_pts("/data/graceduansu/where2act/code/"+fn, pc[0].cpu().numpy(), highlight_id=0)
 # close env
 env.close()
 

@@ -128,6 +128,13 @@ class SAPIENVisionDataset(data.Dataset):
             intended_dir = np.cross(up_dir, forward_dir)
             success = (intended_dir @ mov_dir > self.dp_thres)
 
+        elif primact_type == 'turn-clockwise' or primact_type == 'turn-counterclockwise':
+            mov_dir = np.array(result_data['touch_position_world_xyz_end'], dtype=np.float32) - \
+                        np.array(result_data['touch_position_world_xyz_start'], dtype=np.float32)
+            mov_dir /= np.linalg.norm(mov_dir)
+            intended_dir = np.array(result_data['new_gripper_pose_after_turn3'], dtype=np.float32)
+            success = (intended_dir @ mov_dir > self.dp_thres)
+
         else:
             raise ValueError('ERROR: primact_type %s not supported in check_success!' % primact_type)
         

@@ -1,0 +1,3 @@
+WashingMachine 0 3
+Toaster 0 3
+Switch 0 3

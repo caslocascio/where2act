@@ -26,8 +26,7 @@ else:
 print(conf.primact_types)
 
 if conf.category_types is None:
-    conf.category_types = ['Box', 'Bucket', 'Door', 'Faucet', 'Kettle', 'KitchenPot', 'Microwave', 'Refrigerator', \
-            'Safe', 'StorageFurniture', 'Switch', 'Table', 'TrashCan', 'WashingMachine', 'Window']
+    conf.category_types = ['Bottle', 'Faucet', 'Microwave', 'Oven', 'Toilet', 'Door', 'WashingMachine', 'Toaster', 'Switch']
 else:
     conf.category_types = conf.category_types.split(',')
 print(conf.category_types)
@@ -48,7 +47,7 @@ with open(conf.data_fn, 'r') as fin:
             for primact_type in conf.primact_types:
                 for epoch in range(conf.starting_epoch, conf.starting_epoch+conf.num_epochs):
                     for cnt_id in range(cat2freq[cat]):
-                        #print(shape_id, cat, epoch, cnt_id)
+                        print(shape_id, cat, epoch, cnt_id)
                         datagen.add_one_collect_job(conf.data_dir, shape_id, cat, cnt_id, primact_type, epoch)
 
 datagen.start_all()

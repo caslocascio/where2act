@@ -1,3 +1,16 @@
 wheels
 venv
 __pycache__
+blender-2.79-linux-glibc219-x86_64
+ex_simulation
+*.whl 
+Thea
+TheaDepsUnix
+Pointnet2_PyTorch
+lib
+man
+include
+share
+wandb
+bin
+.vscode

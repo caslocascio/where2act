@@ -1,0 +1,227 @@
+Using default glsl path /home/graceduansu/miniconda3/envs/where2act/lib/python3.6/site-packages/sapien/glsl_shader/130
+Vulkan enabled
+A training run named "exp-model_3d_critic-turn-clockwise-None-train_3d_critic" already exists, overwrite? (y/n) y
+A data_dir named "/data/graceduansu/where2act/data/train-exp-model_3d_critic-turn-clockwise-None-train_3d_critic" already exists, overwrite? (y/n) y
+train_3d_critic.py --exp_suffix train_3d_critic --model_version model_3d_critic --primact_type turn-clockwise --data_dir_prefix /data/graceduansu/where2act/data/train --offline_data_dir /data/graceduansu/where2act/data/train_train-turnclockwise --val_data_dir /data/graceduansu/where2act/data/train_test-turnclockwise --val_data_fn data_tuple_list.txt --train_shape_fn /data/graceduansu/where2act/stats/train_train_data_list_TURN.txt --ins_cnt_fn /data/graceduansu/where2act/stats/ins_cnt_train_TURN.txt --buffer_max_num 10000 --num_processes_for_datagen 4 --num_interaction_data_offline 50 --num_interaction_data 1 --sample_succ
+
+Random Seed: 2203
+Using device: cuda:0
+
+primact_type: turn-clockwise
+category_types: ['Bottle', 'Faucet', 'Microwave', 'Oven', 'Toilet', 'Door', 'WashingMachine', 'Toaster', 'Switch']
+{'Bottle': 10, 'Door': 10, 'Faucet': 10, 'Microwave': 3, 'Oven': 5, 'Toilet': 5}
+len(train_shape_list): 43
+len(all_train_data_list): 1976
+len(train_data_list): 1976
+len(val_data_list): 855
+
+Network(
+  (pointnet2): PointNet2SemSegSSG(
+    (SA_modules): ModuleList(
+      (0): PointnetSAModule(
+        (groupers): ModuleList(
+          (0): QueryAndGroup()
+        )
+        (mlps): ModuleList(
+          (0): Sequential(
+            (0): Conv2d(6, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (1): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+            (3): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (4): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (5): ReLU(inplace=True)
+            (6): Conv2d(32, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (7): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (8): ReLU(inplace=True)
+          )
+        )
+      )
+      (1): PointnetSAModule(
+        (groupers): ModuleList(
+          (0): QueryAndGroup()
+        )
+        (mlps): ModuleList(
+          (0): Sequential(
+            (0): Conv2d(67, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+            (3): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (4): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (5): ReLU(inplace=True)
+            (6): Conv2d(64, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (7): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (8): ReLU(inplace=True)
+          )
+        )
+      )
+      (2): PointnetSAModule(
+        (groupers): ModuleList(
+          (0): QueryAndGroup()
+        )
+        (mlps): ModuleList(
+          (0): Sequential(
+            (0): Conv2d(131, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+            (3): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (4): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (5): ReLU(inplace=True)
+            (6): Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (7): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (8): ReLU(inplace=True)
+          )
+        )
+      )
+      (3): PointnetSAModule(
+        (groupers): ModuleList(
+          (0): QueryAndGroup()
+        )
+        (mlps): ModuleList(
+          (0): Sequential(
+            (0): Conv2d(259, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU(inplace=True)
+            (3): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (4): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (5): ReLU(inplace=True)
+            (6): Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (7): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (8): ReLU(inplace=True)
+          )
+        )
+      )
+    )
+    (FP_modules): ModuleList(
+      (0): PointnetFPModule(
+        (mlp): Sequential(
+          (0): Conv2d(131, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (4): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+          (6): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (7): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (8): ReLU(inplace=True)
+        )
+      )
+      (1): PointnetFPModule(
+        (mlp): Sequential(
+          (0): Conv2d(320, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (4): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+        )
+      )
+      (2): PointnetFPModule(
+        (mlp): Sequential(
+          (0): Conv2d(384, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (4): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+        )
+      )
+      (3): PointnetFPModule(
+        (mlp): Sequential(
+          (0): Conv2d(768, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (4): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+        )
+      )
+    )
+    (fc_layer): Sequential(
+      (0): Conv1d(128, 128, kernel_size=(1,), stride=(1,), bias=False)
+      (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (2): ReLU(inplace=True)
+    )
+  )
+  (critic): Critic(
+    (mlp1): Linear(in_features=134, out_features=128, bias=True)
+    (mlp2): Linear(in_features=128, out_features=1, bias=True)
+    (BCELoss): BCEWithLogitsLoss()
+  )
+)
+
+100% (855 of 855) |######################################################################################################################################################################################| Elapsed Time: 0:00:00 Time:  0:00:00
+[SAPIENVisionDataset 2800] primact_types: turn-clockwise, abs_thres: 0.010000, rel_thres: 0.500000, dp_thres: 0.500000, img_size: 224
+        <turn-clockwise> True: 310 False: 1400
+
+0
+Started all 
+  [  00:00:00 Started generating epoch-1 data ]
+100% (1976 of 1976) |####################################################################################################################################################################################| Elapsed Time: 0:00:00 Time:  0:00:00
+[SAPIENVisionDataset 6712] primact_types: turn-clockwise, abs_thres: 0.010000, rel_thres: 0.500000, dp_thres: 0.500000, img_size: 224
+        <turn-clockwise> True: 596 False: 3356
+
+training run exp-model_3d_critic-turn-clockwise-None-train_3d_critic
+     Time    Epoch     Dataset    Iteration    Progress(%)       LR    TotalLoss
+Saving checkpoint ...... 
+DONE
+ 00:00:01     0/10000   train        0/209         0.0%      1.00E-03    0.69359
+ 00:00:02     0/10000    val         0/87          0.0%      1.00E-03    0.69305
+Visualizing ...
+
+
+Generating html visualization ...
+input_folder_list:  ['input_pc', 'gripper_img_target', 'info']
+input_title_list:  ['input_pc', 'gripper_img_target', 'info']
+Processing 1: data-000
+Processing 2: data-001
+Processing 3: data-002
+Processing 4: data-003
+Processing 5: data-004
+Processing 6: data-005
+Processing 7: data-006
+Processing 8: data-007
+Processing 9: data-008
+Processing 10: data-009
+Processing 11: data-010
+Processing 12: data-011
+Processing 13: data-012
+Processing 14: data-013
+Processing 15: data-014
+Processing 16: data-015
+Processing 17: data-016
+Processing 18: data-017
+Processing 19: data-018
+Processing 20: data-019
+Processing 21: data-020
+Processing 22: data-021
+Processing 23: data-022
+Processing 24: data-023
+Processing 25: data-024
+Processing 26: data-025
+Processing 27: data-026
+Processing 28: data-027
+Processing 29: data-028
+Processing 30: data-029
+Processing 31: data-030
+Processing 32: data-031
+DONE
+ 00:02:58     0/10000   train       10/209         0.0%      1.00E-03    0.65256
+ 00:03:00     0/10000    val         5/87          0.0%      1.00E-03    0.68572
+ 00:03:10     0/10000   train       20/209         0.0%      1.00E-03    0.59452
+ 00:03:16     0/10000    val        10/87          0.0%      1.00E-03    0.69284
+ 00:03:23     0/10000   train       30/209         0.0%      1.00E-03    0.66195
+ 00:03:32     0/10000    val        15/87          0.0%      1.00E-03    0.65818
+ 00:03:36     0/10000   train       40/209         0.0%      1.00E-03    0.60556
+ 00:03:47     0/10000    val        20/87          0.0%      1.00E-03    0.72937
+ 00:03:49     0/10000   train       50/209         0.0%      1.00E-03    0.65604
+ 00:04:02     0/10000   train       60/209         0.0%      1.00E-03    0.60116
+ 00:04:03     0/10000    val        25/87          0.0%      1.00E-03    0.66886
+ 00:04:16     0/10000   train       70/209         0.0%      1.00E-03    0.70907
+ 00:04:18     0/10000    val        30/87          0.0%      1.00E-03    0.60831
+ 00:04:28     0/10000   train       80/209         0.0%      1.00E-03    0.60285
+ 00:04:34     0/10000    val        35/87          0.0%      1.00E-03    0.60191
+ 00:04:41     0/10000   train       90/209         0.0%      1.00E-03    0.60730
+ 00:04:49     0/10000    val        40/87          0.0%      1.00E-03    0.62323
+ 00:04:54     0/10000   train      100/209         0.0%      1.00E-03    0.67973
+ 00:05:05     0/10000    val        45/87          0.0%      1.00E-03    0.71859
+ 00:05:07     0/10000   train      110/209         0.0%      1.00E-03    0.57686

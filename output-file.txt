@@ -1,0 +1,37 @@
+Start qpos:  0.25566551089286804
+[-0.4368596  -0.62062067  0.42519665  1.        ]
+curr_gripper:
+[<sapien.core.pysapien.Joint object at 0x7fd3cf322c70>, <sapien.core.pysapien.Joint object at 0x7fd3cf322ce0>]
+
+z_rot_joint[0]:
+<sapien.core.pysapien.Joint object at 0x7fd3cf322c00>
+
+z_rot_joint global pose:
+Pose([-0.938459, 0.173222, -0.488532], [0.415739, 0.790896, -0.269991, 0.358818])
+temp - z_rot_joint global pose p:
+-0.4885319
+
+z_rot_joint pose to_transformation_matrix:
+[[ 0.5967091  -0.7254183   0.34308404 -0.9384585 ]
+ [-0.12871999 -0.50853276 -0.8513671   0.17322193]
+ [ 0.79206663  0.4638568  -0.39682198 -0.4885319 ]
+ [ 0.          0.          0.          1.        ]]
+
+affine rotation matrix based on vec = :
+[[ 6.123234e-17  1.000000e+00  0.000000e+00  0.000000e+00]
+ [-1.000000e+00  6.123234e-17 -0.000000e+00  0.000000e+00]
+ [-0.000000e+00  0.000000e+00  1.000000e+00  0.000000e+00]
+ [ 0.000000e+00  0.000000e+00  0.000000e+00  1.000000e+00]]
+
+resulting matrix after multiplication:
+[[-0.12871999 -0.50853276 -0.85136712  0.17322193]
+ [-0.59670907  0.72541833 -0.34308404  0.9384585 ]
+ [ 0.79206663  0.46385679 -0.39682198 -0.48853189]
+ [ 0.          0.          0.          1.        ]]
+
+[-0.4175012   0.06084269  0.2029829 ]
+[-0.4175012   0.06084269  0.20298284]
+Final qpos:  0.25566551089286804
+
+JOINT and Pose doc: https://github.com/haosulab/SAPIEN/blob/6bc3f4e2be910199b793f185aea5791d9f193e4c/python/py_package/core/pysapien/__init__.pyi#L681
+Robot (articulation doc): https://github.com/haosulab/SAPIEN/blob/6bc3f4e2be910199b793f185aea5791d9f193e4c/python/py_package/core/pysapien/__init__.pyi#L247

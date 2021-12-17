@@ -1,0 +1,65 @@
+tensorboard --logdir /data/graceduansu/where2act/code/logs
+~/turbovnc/opt/TurboVNC/bin/vncserver -list
+
+
+xvfb-run -a bash scripts/run_visu_critic_heatmap.sh 931
+xvfb-run -a bash scripts/run_visu_action_heatmap_proposals.sh 8867
+8867
+
+
+xvfb-run -a python collect_data.py 40147 StorageFurniture 0 pushing --no_gui --out_dir ex_simulation
+
+python test_turn.py 40147 StorageFurniture 0 turning-counterclockwise (this was 90 degrees)
+python collect_data.py 40147 StorageFurniture 4 turning-counterclockwise
+
+python collect_data.py 40147 StorageFurniture 6 turning-counterclockwise
+python collect_data.py 40147 StorageFurniture 7 turning-counterclockwise
+
+python collect_data.py 40147 StorageFurniture 8 turning-counterclockwise
+
+python collect_data.py 40147 StorageFurniture 9 turning-counterclockwise (this was 45 degrees)
+python collect_data.py 40147 StorageFurniture 10 turning-counterclockwise
+
+python collect_data.py 40147 StorageFurniture 11 turning-counterclockwise
+python collect_data.py 40147 StorageFurniture 12 turning-clockwise
+
+python collect_data.py 40147 StorageFurniture 13 turning-clockwise (45 about z)
+python collect_data.py 40147 StorageFurniture 14 turning-clockwise
+python collect_data.py 40147 StorageFurniture 15 turning-clockwise
+python collect_data.py 40147 StorageFurniture 16 turning-clockwise
+python collect_data.py 40147 StorageFurniture 17 turning-clockwise
+
+python collect_data.py 8867 Door 17 turning-clockwise
+python collect_data.py 8867 Door 1 turning-clockwise
+python collect_data.py 8867 Door 2 turning-clockwise
+
+python collect_data.py 3763 Bottle 2 turn-clockwise
+python collect_data.py 3763 Bottle 3 push
+
+python collect_data.py 100283 WashingMachine 3 push
+
+
+
+python collect_data.py 40147 StorageFurniture 3 turning-counterclockwise (this was 180 degrees)
+python collect_data.py 40147 StorageFurniture 2 turning-counterclockwise
+python collect_data.py 40147 StorageFurniture 1 turning-counterclockwise (this was 270 degrees)
+
+python collect_data.py 40147 StorageFurniture 5 pushing
+
+python replay_data.py results/40147_StorageFurniture_0_turning-counterclockwise_0/result.json
+python replay_data.py results/40147_StorageFurniture_3_turning-counterclockwise_0/result.json
+python replay_data.py results/40147_StorageFurniture_2_turning-counterclockwise_0/result.json
+python replay_data.py results/40147_StorageFurniture_1_turning-counterclockwise_0/result.json
+python replay_data.py results/40147_StorageFurniture_4_turning-counterclockwise_0/result.json
+
+python replay_data.py results/40147_StorageFurniture_6_turning-counterclockwise_0/result.json
+
+python replay_data.py results/40147_StorageFurniture_7_turning-counterclockwise_0/result.json
+python replay_data.py results/40147_StorageFurniture_7_turning-counterclockwise_0/result.json
+
+python replay_data.py results/40147_StorageFurniture_13_turning-clockwise_0/result.json
+python replay_data.py results/40147_StorageFurniture_14_turning-clockwise_0/result.json
+
+python replay_data.py results/8867_Door_17_turning-clockwise_0/result.json
+
+xvfb-run -a python replay_data.py 8867 Door 20 turning-clockwise --no_gui --out_dir ex_simulation

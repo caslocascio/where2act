@@ -18,6 +18,10 @@ from sapien.core import Pose
 from env import Env, ContactError
 from camera import Camera
 from robots.panda_robot import Robot
+from transforms3d.axangles import axangle2mat
+import transforms3d.affines
+import transforms3d.quaternions
+import transforms3d.axangles
 
 parser = ArgumentParser()
 parser.add_argument('shape_id', type=str)
@@ -39,9 +43,31 @@ else:
     out_dir = os.path.join('results', '%s_%s_%d_%s_%d' % (shape_id, args.category, args.cnt_id, primact_type, trial_id))
 if os.path.exists(out_dir):
     shutil.rmtree(out_dir)
-os.mkdir(out_dir)
+os.makedirs(out_dir)
 flog = open(os.path.join(out_dir, 'log.txt'), 'w')
 out_info = dict()
+
+# Heuristic
+# turnable_list = ['Bottle', 'Faucet', 'Microwave', 'Oven', 'Toilet', 'Door', 'WashingMachine', 'Toaster', 'Switch']
+# if args.category in turnable_list:
+#     if 'turn' not in primact_type:
+#         print('Inaccurate interaction type. {} is only turnable! Quit!\n'.format(args.category))
+#         out_msg = str('Attempted action type was ' + primact_type)
+#         print(out_msg)
+#         flog.close()
+#         exit(1)
+
+# push_pullable_list = ['Door', 'StorageFurniture', 'Box', 'Faucet', 'Kettle', 'Microwave', 'Fridge', 'Cabinet', 'TrashCan', 'Switch',
+#                       'Window', 'Bucket', 'Pot', 'Safe', 'Table', 'WashingMachine']
+# if args.category in push_pullable_list:
+#     if 'push' not in primact_type and 'pull' not in primact_type:
+#         print('Inaccurate interaction type. {} is only pushable or pullable! Quit!\n'.format(args.category))
+#         out_msg = str('Attempted action type was ' + primact_type)
+#         print(out_msg)
+#         flog.close()
+#         exit(1)
+
+
 
 # set random seed
 if args.random_seed is not None:
@@ -82,7 +108,9 @@ while still_timesteps < 5000 and wait_timesteps < 20000:
     invalid_contact = False
     for c in env.scene.get_contacts():
         for p in c.points:
-            if abs(p.impulse @ p.impulse) > 1e-4:
+            if abs(p.impulse @ p.impulse) > 1e-2:
+                # print(p.impulse)
+                print(abs(p.impulse @ p.impulse)) #2.7 
                 invalid_contact = True
                 break
         if invalid_contact:
@@ -90,15 +118,17 @@ while still_timesteps < 5000 and wait_timesteps < 20000:
     if np.max(np.abs(cur_new_qpos - cur_qpos)) < 1e-6 and (not invalid_contact):
         still_timesteps += 1
     else:
+        #print(np.max(np.abs(cur_new_qpos - cur_qpos)))
         still_timesteps = 0
     cur_qpos = cur_new_qpos
     wait_timesteps += 1
 
-if still_timesteps < 5000:
-    flog.write('Object Not Still!\n')
-    flog.close()
-    env.close()
-    exit(1)
+# if still_timesteps < 5000:
+#     print('Object Not Still!')
+#     flog.write('Object Not Still!\n')
+#     flog.close()
+#     env.close()
+#     exit(1)
 
 ### use the GT vision
 rgb, depth = cam.get_observation()
@@ -237,14 +267,14 @@ success = True
 try:
     if 'pushing' in primact_type:
         robot.close_gripper()
-    elif 'pulling' in primact_type:
+    elif 'pulling' or 'turn' in primact_type:
         robot.open_gripper()
 
     # approach
     robot.move_to_target_pose(final_rotmat, 2000)
     robot.wait_n_steps(2000)
 
-    if 'pulling' in primact_type:
+    if 'pulling' or 'turn' in primact_type:
         robot.close_gripper()
         robot.wait_n_steps(2000)
     
@@ -252,6 +282,36 @@ try:
         robot.move_to_target_pose(end_rotmat, 2000)
         robot.wait_n_steps(2000)
     
+    if 'clockwise' in primact_type or 'counterclockwise' in primact_type:
+        world_z = None
+        if primact_type == 'turn-clockwise':
+            world_z = transforms3d.axangles.axangle2aff(np.array([0,0,1]), -np.pi/2)
+        if primact_type == 'turn-counterclockwise':
+            world_z = transforms3d.axangles.axangle2aff(np.array([0,0,1]), np.pi/2)
+
+        quat = robot.end_effector.get_pose().q
+        threemat = transforms3d.quaternions.quat2mat(quat)
+        curr_gripper_pose = transforms3d.affines.compose(robot.end_effector.get_pose().p, threemat, np.ones(3))
+
+        # print(curr_gripper_pose.shape)
+        # print(world_z.shape)
+        new_gripper_pose = curr_gripper_pose @ world_z
+        out_info['new_gripper_pose_after_turn'] = new_gripper_pose.tolist()
+        print(new_gripper_pose)
+        out_info['position_local_xyz1'] = position_local_xyz1.tolist()
+        converted = new_gripper_pose @ position_local_xyz1
+        print('----------------------')
+        print(converted[:3].tolist())
+        out_info['new_gripper_pose_after_turn3'] = converted[:3].tolist()
+
+        robot.move_to_target_pose(new_gripper_pose, 2000) # may have to change time since we are implementing turning
+        robot.wait_n_steps(2000)
+
+        # continous action logic
+        # robot.move_to_target_pose(start_rotmat, 2000)
+        # robot.wait_n_steps(2000)
+
+
     if primact_type == 'pulling':
         robot.move_to_target_pose(start_rotmat, 2000)
         robot.wait_n_steps(2000)

@@ -11,7 +11,8 @@ def load_obj(fn):
     lines = [line.rstrip() for line in fin]
     fin.close()
 
-    vertices = []; faces = [];
+    vertices = []
+    faces = []
     for line in lines:
         if line.startswith('v '):
             vertices.append(np.float32(line.split()[1:4]))
@@ -29,8 +30,8 @@ cube_v = cube_mesh['vertices'] / 100
 cube_f = cube_mesh['faces']
 
 def render_pts(out_fn, pts, blender_fn='camera.blend', highlight_id=None):
-    all_v = [np.zeros((0, 3), dtype=np.float32)]; 
-    all_f = [np.zeros((0, 3), dtype=np.int32)];
+    all_v = [np.zeros((0, 3), dtype=np.float32)]
+    all_f = [np.zeros((0, 3), dtype=np.int32)]
     t = 0
     for i in range(pts.shape[0]):
         if (highlight_id is None) or (i != highlight_id):
@@ -62,6 +63,40 @@ def render_pts(out_fn, pts, blender_fn='camera.blend', highlight_id=None):
             blender_fn, out_fn+'.obj', out_fn)
     call(cmd, shell=True)
 
+def render_pts_png(out_fn, pts, blender_fn='camera.blend', highlight_id=None):
+    all_v = [np.zeros((0, 3), dtype=np.float32)]
+    all_f = [np.zeros((0, 3), dtype=np.int32)]
+    t = 0
+    for i in range(pts.shape[0]):
+        if (highlight_id is None) or (i != highlight_id):
+            all_v.append(cube_v + pts[i])
+            all_f.append(cube_f + 8 * t)
+            t += 1
+    all_v = np.vstack(all_v)
+    all_f = np.vstack(all_f)
+    with open(out_fn+'.obj', 'w') as fout:
+        fout.write('mtllib %s\n' % (out_fn.split('/')[-1]+'.mtl'))
+        for i in range(all_v.shape[0]):
+            fout.write('v %f %f %f\n' % (all_v[i, 0], all_v[i, 1], all_v[i, 2]))
+        fout.write('usemtl f0\n')
+        for i in range(all_f.shape[0]):
+            fout.write('f %d %d %d\n' % (all_f[i, 0], all_f[i, 1], all_f[i, 2]))
+        if highlight_id is not None:
+            vs = cube_v * 5 + pts[highlight_id]
+            fs = cube_f + all_v.shape[0]
+            for i in range(vs.shape[0]):
+                fout.write('v %f %f %f\n' % (vs[i, 0], vs[i, 1], vs[i, 2]))
+            fout.write('usemtl f1\n')
+            for i in range(fs.shape[0]):
+                fout.write('f %d %d %d\n' % (fs[i, 0], fs[i, 1], fs[i, 2]))
+    with open(out_fn+'.mtl', 'w') as fout:
+        fout.write('newmtl f0\nKd 0 0 1\n')
+        fout.write('newmtl f1\nKd 1 0 0\n')
+    cmd = 'cd %s && blender -noaudio --background %s --render-output \"%s\" --render-format PNG --python render_blender.py %s %s > /dev/null' \
+            % (os.path.join(os.path.dirname(os.path.abspath(__file__))), \
+            blender_fn, out_fn+'.png', out_fn+'.obj', out_fn)
+    call(cmd, shell=True)
+
 """
     pts: P x N x 3 (P <= 20)
 """
@@ -72,8 +107,8 @@ def render_part_pts(out_fn, pts, blender_fn='camera.blend'):
     num_part = pts.shape[0]
     num_point = pts.shape[1]
     for pid in range(num_part):
-        all_v = [np.zeros((0, 3), dtype=np.float32)]; 
-        all_f = [np.zeros((0, 3), dtype=np.int32)];
+        all_v = [np.zeros((0, 3), dtype=np.float32)] 
+        all_f = [np.zeros((0, 3), dtype=np.int32)]
         for i in range(num_point):
             all_v.append(cube_v + pts[pid, i])
             all_f.append(cube_f + 8 * (pid*num_point+i))

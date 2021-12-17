@@ -1,0 +1,6 @@
+Bottle 5 10
+Door 5 10
+Faucet 0 10
+Microwave 2 3
+Oven 5 5
+Toilet 5 5

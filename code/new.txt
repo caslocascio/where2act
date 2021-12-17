@@ -1,0 +1,15 @@
+rotation by world z axis = ax2([0,0,1)]
+
+quat = get_global_pose(robot.end_effector)
+3mat = quat2mat(quat)
+
+# use 3x1 position vector and 3x3 mat to make 4x4 gripper pose transform matrix
+curr gripper pose = affines.compose(np.zeros(3), 3mat, np.ones(3))
+
+# world z axis is transformed into gripper z axis by this operation:
+new gripper pose = rotation by world z axis @  curr gripper pose  
+
+
+
+move_to_target_pose(new_gripper_pose)
+

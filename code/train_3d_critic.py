@@ -21,7 +21,7 @@ import utils
 from pointnet2_ops.pointnet2_utils import furthest_point_sample
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(BASE_DIR, 'blender_utils'))
-import render_using_blender as render_utils
+import blender_utils.render_using_blender as render_utils
 
 
 def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data_list):
@@ -199,7 +199,6 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
             total_loss.backward()
             network_opt.step()
             network_lr_scheduler.step()
-
             # sample succ
             if conf.sample_succ:
                 network.eval()
@@ -226,22 +225,27 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
                         valid_id_l = conf.num_interaction_data_offline + conf.num_interaction_data * (epoch-1)
                         valid_id_r = conf.num_interaction_data_offline + conf.num_interaction_data * epoch
 
+                        # choose one from the two options
+                        gt_movable = whole_movables[i].cpu().numpy()
+
+                        whole_pc_score1 = whole_pc_scores1[i].cpu().numpy() * gt_movable
+                        whole_pc_score1[whole_pc_score1 < 0.5] = 0
+                        whole_pc_score_sum1 = np.sum(whole_pc_score1) + 1e-12
+                        
+                        whole_pc_score2 = whole_pc_scores2[i].cpu().numpy() * gt_movable
+                        whole_pc_score2[whole_pc_score2 < 0.5] = 0
+                        whole_pc_score_sum2 = np.sum(whole_pc_score2) + 1e-12
+                        
+                        choose1or2_ratio = whole_pc_score_sum1 / (whole_pc_score_sum1 + whole_pc_score_sum2)
+                        with open('/data/graceduansu/where2act/ssr.txt', 'a') as f:
+                            f.write(str(choose1or2_ratio))
+                            f.write("\n")
+
                         if ('sample-succ' not in ss_cur_dir[i]) and (ss_is_original[i]) and (ss_cur_dir[i] not in sample_succ_dirs) \
                                 and (valid_id_l <= int(ss_trial_id[i]) < valid_id_r):
                             sample_succ_dirs.append(ss_cur_dir[i])
 
-                            # choose one from the two options
-                            gt_movable = whole_movables[i].cpu().numpy()
-
-                            whole_pc_score1 = whole_pc_scores1[i].cpu().numpy() * gt_movable
-                            whole_pc_score1[whole_pc_score1 < 0.5] = 0
-                            whole_pc_score_sum1 = np.sum(whole_pc_score1) + 1e-12
                             
-                            whole_pc_score2 = whole_pc_scores2[i].cpu().numpy() * gt_movable
-                            whole_pc_score2[whole_pc_score2 < 0.5] = 0
-                            whole_pc_score_sum2 = np.sum(whole_pc_score2) + 1e-12
-                            
-                            choose1or2_ratio = whole_pc_score_sum1 / (whole_pc_score_sum1 + whole_pc_score_sum2)
                             random_dir1 = random_dirs1[i].cpu().numpy()
                             random_dir2 = random_dirs2[i].cpu().numpy()
                             if np.random.random() < choose1or2_ratio:
@@ -252,6 +256,7 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
 
                             # sample <X, Y> on each img
                             pp = whole_pc_score + 1e-12
+
                             ptid = np.random.choice(len(whole_pc_score), 1, p=pp/pp.sum())
                             X = whole_pxids[i, ptid, 0].item()
                             Y = whole_pxids[i, ptid, 1].item()
@@ -373,7 +378,7 @@ def forward(batch, data_features, network, conf, \
                 # visu html
                 utils.printout(conf.flog, 'Generating html visualization ...')
                 sublist = 'input_pc,gripper_img_target,info'
-                cmd = 'cd %s && python %s . 10 htmls %s %s > /dev/null' % (out_dir, os.path.join(BASE_DIR, 'gen_html_hierachy_local.py'), sublist, sublist)
+                cmd = 'cd %s && python %s . 10 htmls %s %s ' % (out_dir, os.path.join(BASE_DIR, 'gen_html_hierachy_local.py'), sublist, sublist)
                 call(cmd, shell=True)
                 utils.printout(conf.flog, 'DONE')
 
@@ -517,7 +522,7 @@ if __name__ == '__main__':
     utils.printout(flog, 'primact_type: %s' % str(conf.primact_type))
 
     if conf.category_types is None:
-        conf.category_types = ['Box', 'Door', 'Faucet', 'Kettle', 'Microwave', 'Refrigerator', 'StorageFurniture', 'Switch', 'TrashCan', 'Window']
+        conf.category_types = ['Bottle', 'Faucet', 'Microwave', 'Oven', 'Toilet', 'Door', 'WashingMachine', 'Toaster', 'Switch']
     else:
         conf.category_types = conf.category_types.split(',')
     utils.printout(flog, 'category_types: %s' % str(conf.category_types))

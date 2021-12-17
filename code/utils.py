@@ -14,6 +14,9 @@ colors = np.array(colors, dtype=np.float32)
 import matplotlib.pylab as plt
 from mpl_toolkits.mplot3d import Axes3D
 from subprocess import call
+# importing required libraries
+
+from pylab import *
 
 
 def force_mkdir(folder):
@@ -110,8 +113,50 @@ def render_pts_label_png(out, v, l):
     export_pts(out+'.pts', v)
     export_label(out+'.label', l)
     export_pts_label(out+'.feats', v, l)
-    cmd = 'RenderShape %s.pts -f %s.feats %s.png 448 448 -v 1,0,0,-5,0,0,0,0,1 >> /dev/null' % (out, out, out)
-    call(cmd, shell=True)
+    # 3D Heatmap in Python using matplotlib
+    # x = []
+    # y = []
+    # z = []
+    # with open(out+'.pts', 'r') as fin:
+    #     for line in fin:
+    #         lsplit = line.split()
+    #         x.append(lsplit[0])
+    #         y.append(lsplit[1])
+    #         z.append(lsplit[2])
+    
+    # creating a dummy dataset
+    print(v)
+    print('----------------')
+    print(l)
+    x = v[:,0]
+    y = v[:,1]
+    z = v[:,2]
+    colo = l
+
+    # creating figures
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # setting color bar
+    color_map = cm.ScalarMappable()
+    color_map.set_array(colo)
+
+    # creating the heatmap
+    img = ax.scatter(x, y, z,
+                    s=200)
+    plt.colorbar(color_map)
+
+    # adding title and labels
+    ax.set_title("3D Heatmap")
+    ax.set_xlabel('X-axis')
+    ax.set_ylabel('Y-axis')
+    ax.set_zlabel('Z-axis')
+
+    # displaying plot
+    plt.savefig(out+".png")
+
+    #cmd = 'RenderShape %s.pts -f %s.feats %s.png 448 448 -v 1,0,0,-5,0,0,0,0,1' % (out, out, out)
+    # call(cmd, shell=True)
 
 def export_pts_color_obj(out, v, c):
     with open(out+'.obj', 'w') as fout:

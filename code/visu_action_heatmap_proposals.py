@@ -107,11 +107,10 @@ while still_timesteps < 5000 and wait_timesteps < 20000:
     cur_qpos = cur_new_qpos
     wait_timesteps += 1
 
-if still_timesteps < 5000:
-    printout(flog, 'Object Not Still!')
-    flog.close()
-    env.close()
-    exit(1)
+# if still_timesteps < 5000:
+#     print('Object Not Still!')
+#     env.close()
+#     exit(1)
 
 
 ### use the GT vision

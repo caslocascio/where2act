@@ -6,6 +6,7 @@
     REPLAY
 """
 
+from math import pi
 import os
 import sys
 import shutil
@@ -21,6 +22,12 @@ from robots.panda_robot import Robot
 
 from PIL import Image
 from subprocess import call
+from transforms3d.quaternions import axangle2quat
+from scipy.spatial.transform import Rotation as R
+import transforms3d.affines
+import transforms3d.quaternions
+import transforms3d.axangles
+
 
 json_fn = sys.argv[1]
 out_dir = '/'.join(json_fn.split('/')[:-1])
@@ -122,7 +129,7 @@ rotmat[:3, 0] = forward
 rotmat[:3, 1] = left
 rotmat[:3, 2] = up
 
-final_dist = 0.1
+final_dist = 0.9
 if primact_type == 'pushing-left' or primact_type == 'pushing-up':
     final_dist = 0.11
 
@@ -131,7 +138,7 @@ final_rotmat[:3, 3] = position_world - up * final_dist
 final_pose = Pose().from_transformation_matrix(final_rotmat)
 
 start_rotmat = np.array(rotmat, dtype=np.float32)
-start_rotmat[:3, 3] = position_world - up * 0.15
+start_rotmat[:3, 3] = position_world - up * 1
 start_pose = Pose().from_transformation_matrix(start_rotmat)
 
 action_direction = None
@@ -148,6 +155,7 @@ if action_direction is not None:
 robot_urdf_fn = './robots/panda_gripper.urdf'
 robot_material = env.get_material(4, 4, 0.01)
 robot = Robot(env, robot_urdf_fn, robot_material, open_gripper=('pulling' in primact_type))
+print(robot.robot)
 
 # start pose
 robot.robot.set_root_pose(start_pose)
@@ -168,19 +176,37 @@ print(position_local_xyz1)
 
 if 'pushing' in primact_type:
     robot.close_gripper()
-elif 'pulling' in primact_type:
+elif 'pulling' or 'turn' in primact_type:
     robot.open_gripper()
 
 # approach
 robot.move_to_target_pose(final_rotmat, 2000)
 robot.wait_n_steps(2000)
 
-if 'pulling' in primact_type:
+if 'pulling' or 'turn' in primact_type:
     robot.close_gripper()
     robot.wait_n_steps(2000)
 
 if 'left' in primact_type or 'up' in primact_type:
     robot.move_to_target_pose(end_rotmat, 2000)
+    robot.wait_n_steps(2000)
+
+if 'clockwise' in primact_type or 'counterclockwise' in primact_type:
+    world_z = None
+    if primact_type == 'turn-clockwise':
+        world_z = transforms3d.axangles.axangle2aff(np.array([0,0,1]), -np.pi/2)
+    if primact_type == 'turn-counterclockwise':
+        world_z = transforms3d.axangles.axangle2aff(np.array([0,0,1]), np.pi/2)
+
+    quat = robot.end_effector.get_pose().q
+    threemat = transforms3d.quaternions.quat2mat(quat)
+    curr_gripper_pose = transforms3d.affines.compose(robot.end_effector.get_pose().p, threemat, np.ones(3))
+
+    
+    new_gripper_pose = curr_gripper_pose @ world_z
+    print(new_gripper_pose)
+
+    robot.move_to_target_pose(new_gripper_pose, 2000) # may have to change time since we are implementing turning
     robot.wait_n_steps(2000)
 
 if primact_type == 'pulling':

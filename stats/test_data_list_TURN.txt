@@ -1,0 +1,9 @@
+100282 WashingMachine
+100283 WashingMachine
+103518 WashingMachine
+103475 Toaster
+103486 Toaster
+103553 Toaster
+100845 Switch
+100866 Switch
+100971 Switch

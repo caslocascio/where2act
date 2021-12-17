@@ -1,18 +1,18 @@
 python train_3d.py \
-    --exp_suffix train_3d \
+    --exp_suffix train_3d_1Blender \
     --model_version model_3d \
-    --primact_type pushing \
-    --data_dir_prefix ../data/gt_data \
-    --offline_data_dir ../data/gt_data-train_10cats_train_data-pushing \
-    --val_data_dir ../data/gt_data-train_10cats_test_data-pushing \
+    --category_types Faucet \
+    --primact_type turn-clockwise \
+    --data_dir_prefix /data/graceduansu/where2act/data/1Blender_train \
+    --offline_data_dir /data/graceduansu/where2act/data/1Blender_train_train-turnclockwise \
+    --val_data_dir /data/graceduansu/where2act/data/1Blender_train_test-turnclockwise \
     --val_data_fn data_tuple_list.txt \
-    --train_shape_fn ../stats/train_10cats_train_data_list.txt \
-    --ins_cnt_fn ../stats/ins_cnt_15cats.txt \
+    --train_shape_fn /data/graceduansu/where2act/stats/train_train_data_list_TURN.txt \
+    --ins_cnt_fn /data/graceduansu/where2act/stats/ins_cnt_train_TURN.txt \
     --buffer_max_num 10000 \
-    --num_processes_for_datagen [?] \
-    --num_interaction_data_offline 50 \
+    --num_processes_for_datagen 4 \
+    --num_interaction_data_offline 50 
     --num_interaction_data 1 \
     --sample_succ \
-    --pretrained_critic_ckpt [?] \
-    --overwrite
-
+    --pretrained_critic_ckpt /data/graceduansu/where2act/code/logs/exp-model_3d_critic-turn-clockwise-Faucet-train_3d_critic_1Blender/ckpts/94-network.pth \
+    --device 'cuda:0'

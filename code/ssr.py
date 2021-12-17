@@ -1,5 +1,5 @@
 """
-    Train the full model
+    Train the Action Scoring Module only
 """
 
 import os
@@ -33,26 +33,8 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
     model_def = utils.get_model_module(conf.model_version)
 
     # create models
-    network = model_def.Network(conf.feat_dim, conf.rv_dim, conf.rv_cnt)
+    network = model_def.Network(conf.feat_dim)
     utils.printout(conf.flog, '\n' + str(network) + '\n')
-    
-    # load pretrained critic
-    if (not conf.resume) and (conf.pretrained_critic_ckpt is not None):
-        utils.printout(conf.flog, f'Loading pretrained Critic ckpt {conf.pretrained_critic_ckpt}')
-        pnpp_state_dict_to_load = dict(); critic_state_dict_to_load = dict();
-        pretrained_critic_ckpt = torch.load(conf.pretrained_critic_ckpt)
-        for k in pretrained_critic_ckpt:
-            if k.startswith('pointnet2.'):
-                print('pointnet2 to load: ', k)
-                cur_param_name = '.'.join(k.split('.')[1:])
-                pnpp_state_dict_to_load[cur_param_name] = pretrained_critic_ckpt[k]
-            elif k.startswith('critic.'):
-                print('critic to load: ', k)
-                cur_param_name = '.'.join(k.split('.')[1:])
-                critic_state_dict_to_load[cur_param_name] = pretrained_critic_ckpt[k]
-        network.pointnet2.load_state_dict(pnpp_state_dict_to_load)
-        network.critic.load_state_dict(critic_state_dict_to_load)
-        utils.printout(conf.flog, 'Done.')
 
     # create optimizers
     network_opt = torch.optim.Adam(network.parameters(), lr=conf.lr, weight_decay=conf.weight_decay)
@@ -62,7 +44,7 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
 
     # create logs
     if not conf.no_console_log:
-        header = '     Time    Epoch     Dataset    Iteration    Progress(%)       LR    CriticLoss  ActorCovLoss  ActScoreLoss   TotalLoss'
+        header = '     Time    Epoch     Dataset    Iteration    Progress(%)       LR    TotalLoss'
     if not conf.no_tb_log:
         # https://github.com/lanpa/tensorboard-pytorch
         from tensorboardX import SummaryWriter
@@ -98,7 +80,7 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
     start_time = time.time()
 
     last_train_console_log_step, last_val_console_log_step = None, None
-    
+
     # if resume
     start_epoch = 0
     if conf.resume:
@@ -136,7 +118,7 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
                     for item in train_data_list:
                         if cur_data_folder == '/'.join(item.split('/')[:-1]):
                             fout.write(item.split('/')[-1]+'\n')
-            
+
             # load offline-generated sample-random data
             for item in all_train_data_list:
                 valid_id_l = conf.num_interaction_data_offline + conf.num_interaction_data * (epoch-1)
@@ -144,79 +126,7 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
                 if valid_id_l <= int(item.split('_')[-1]) < valid_id_r:
                     train_data_list.append(item)
 
-        ### start generating data for the next epoch
-        # sample succ
-        if conf.sample_succ:
-            if conf.resume and epoch == start_epoch:
-                sample_succ_list = torch.load(os.path.join(conf.exp_dir, 'ckpts', '%d-sample_succ_list.pth' % start_epoch))
-            else:
-                torch.save(sample_succ_list, os.path.join(conf.exp_dir, 'ckpts', '%d-sample_succ_list.pth' % epoch))
-            for item in sample_succ_list:
-                datagen.add_one_recollect_job(item[0], item[1], item[2], item[3], item[4], item[5], item[6])
             sample_succ_list = []
-            sample_succ_dirs = []
-            cur_sample_succ_dir = os.path.join(conf.data_dir, 'epoch-%04d_sample-succ' % epoch)
-            utils.force_mkdir(cur_sample_succ_dir)
-
-        # start all jobs
-        datagen.start_all()
-        utils.printout(conf.flog, f'  [ {strftime("%H:%M:%S", time.gmtime(time.time()-start_time)):>9s} Started generating epoch-{epoch+1} data ]')
-
-        ### load data for the current epoch
-        if conf.resume and epoch == start_epoch:
-            train_dataset = torch.load(os.path.join(conf.exp_dir, 'ckpts', '%d-train_dataset.pth' % start_epoch))
-        else:
-            train_dataset.load_data(train_data_list)
-        utils.printout(conf.flog, str(train_dataset))
-        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=conf.batch_size, shuffle=True, pin_memory=True, \
-                num_workers=0, drop_last=True, collate_fn=utils.collate_feats, worker_init_fn=utils.worker_init_fn)
-        train_num_batch = len(train_dataloader)
-
-        ### print log
-        if not conf.no_console_log:
-            utils.printout(conf.flog, f'training run {conf.exp_name}')
-            utils.printout(conf.flog, header)
-
-        train_batches = enumerate(train_dataloader, 0)
-        val_batches = enumerate(val_dataloader, 0)
-
-        train_fraction_done = 0.0
-        val_fraction_done = 0.0
-        val_batch_ind = -1
-
-        ### train for every batch
-        for train_batch_ind, batch in train_batches:
-            train_fraction_done = (train_batch_ind + 1) / train_num_batch
-            train_step = epoch * train_num_batch + train_batch_ind
-
-            log_console = not conf.no_console_log and (last_train_console_log_step is None or \
-                    train_step - last_train_console_log_step >= conf.console_log_interval)
-            if log_console:
-                last_train_console_log_step = train_step
-            
-            # save checkpoint
-            if train_batch_ind == 0:
-                with torch.no_grad():
-                    utils.printout(conf.flog, 'Saving checkpoint ...... ')
-                    torch.save(network.state_dict(), os.path.join(conf.exp_dir, 'ckpts', '%d-network.pth' % epoch))
-                    torch.save(network_opt.state_dict(), os.path.join(conf.exp_dir, 'ckpts', '%d-optimizer.pth' % epoch))
-                    torch.save(network_lr_scheduler.state_dict(), os.path.join(conf.exp_dir, 'ckpts', '%d-lr_scheduler.pth' % epoch))
-                    torch.save(train_dataset, os.path.join(conf.exp_dir, 'ckpts', '%d-train_dataset.pth' % epoch))
-                    utils.printout(conf.flog, 'DONE')
-
-            # set models to training mode
-            network.train()
-
-            # forward pass (including logging)
-            total_loss, whole_feats, whole_pcs, whole_pxids, whole_movables = forward(batch=batch, data_features=data_features, network=network, conf=conf, is_val=False, \
-                    step=train_step, epoch=epoch, batch_ind=train_batch_ind, num_batch=train_num_batch, start_time=start_time, \
-                    log_console=log_console, log_tb=not conf.no_tb_log, tb_writer=train_writer, lr=network_opt.param_groups[0]['lr'])
-
-            # optimize one step
-            network_opt.zero_grad()
-            total_loss.backward()
-            network_opt.step()
-            network_lr_scheduler.step()
 
             # sample succ
             if conf.sample_succ:
@@ -270,6 +180,10 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
 
                             # sample <X, Y> on each img
                             pp = whole_pc_score + 1e-12
+                            
+                            with open('/data/graceduansu/where2act/ssr.txt', 'a') as f:
+                                f.write(choose1or2_ratio)
+
                             ptid = np.random.choice(len(whole_pc_score), 1, p=pp/pp.sum())
                             X = whole_pxids[i, ptid, 0].item()
                             Y = whole_pxids[i, ptid, 1].item()
@@ -319,26 +233,22 @@ def forward(batch, data_features, network, conf, \
 
     input_dirs1 = torch.cat(batch[data_features.index('gripper_direction_camera')], dim=0).to(conf.device)     # B x 3
     input_dirs2 = torch.cat(batch[data_features.index('gripper_forward_direction_camera')], dim=0).to(conf.device)     # B x 3
-    
+
+    # forward through the network
+    pred_result_logits, pred_whole_feats = network(input_pcs, input_dirs1, input_dirs2)     # B x 2, B x F x N
+
     # prepare gt
     gt_result = torch.Tensor(batch[data_features.index('result')]).long().to(conf.device)     # B
     gripper_img_target = torch.cat(batch[data_features.index('gripper_img_target')], dim=0).to(conf.device)     # B x 3 x H x W
-
-    # forward through the network
-    critic_loss_per_data, actor_coverage_loss_per_data, action_score_loss_per_data, \
-            pred_result_logits, pred_whole_feats = \
-                network(input_pcs, input_dirs1, input_dirs2, gt_result)
  
+    # for each type of loss, compute losses per data
+    result_loss_per_data = network.critic.get_ce_loss(pred_result_logits, gt_result)
+    
     # for each type of loss, compute avg loss per batch
-    critic_loss = critic_loss_per_data.mean()
-    # for actor coverage, only train for gt_result=True pixels
-    actor_coverage_loss = (actor_coverage_loss_per_data * gt_result).sum() / (gt_result.sum() + 1e-12)
-    action_score_loss = action_score_loss_per_data.mean()
+    result_loss = result_loss_per_data.mean()
 
     # compute total loss
-    total_loss = critic_loss * conf.loss_weight_critic + \
-            actor_coverage_loss * conf.loss_weight_actor_coverage + \
-            action_score_loss * conf.loss_weight_action_score
+    total_loss = result_loss
 
     # display information
     data_split = 'train'
@@ -355,17 +265,11 @@ def forward(batch, data_features, network, conf, \
                 f'''{batch_ind:>5.0f}/{num_batch:<5.0f} '''
                 f'''{100. * (1+batch_ind+num_batch*epoch) / (num_batch*conf.epochs):>9.1f}%      '''
                 f'''{lr:>5.2E} '''
-                f'''{critic_loss.item():>10.5f}'''
-                f'''{actor_coverage_loss.item():>10.5f}'''
-                f'''{action_score_loss.item():>10.5f}'''
                 f'''{total_loss.item():>10.5f}''')
             conf.flog.flush()
 
         # log to tensorboard
         if log_tb and tb_writer is not None:
-            tb_writer.add_scalar('critic_loss', critic_loss.item(), step)
-            tb_writer.add_scalar('actor_coverage_loss', actor_coverage_loss.item(), step)
-            tb_writer.add_scalar('action_score_loss', action_score_loss.item(), step)
             tb_writer.add_scalar('total_loss', total_loss.item(), step)
             tb_writer.add_scalar('lr', lr, step)
 
@@ -393,17 +297,15 @@ def forward(batch, data_features, network, conf, \
                     Image.fromarray(cur_gripper_img_target).save(os.path.join(gripper_img_target_dir, fn))
                     with open(os.path.join(info_dir, fn.replace('.png', '.txt')), 'w') as fout:
                         fout.write('cur_dir: %s\n' % batch[data_features.index('cur_dir')][i])
-                        fout.write('pred: %s\n' % utils.print_true_false(pred_result_logits[i].argmax().cpu().numpy()))
+                        fout.write('pred: %s\n' % utils.print_true_false((pred_result_logits[i]>0).cpu().numpy()))
                         fout.write('gt: %s\n' % utils.print_true_false(gt_result[i].cpu().numpy()))
-                        fout.write('critic_loss: %f\n' % critic_loss_per_data[i].item())
-                        fout.write('actor_coverage_loss: %f\n' % actor_coverage_loss_per_data[i].item())
-                        fout.write('action_score_loss: %f\n' % action_score_loss_per_data[i].item())
+                        fout.write('result_loss: %f\n' % result_loss_per_data[i].item())
                 
             if batch_ind == conf.num_batch_every_visu - 1:
                 # visu html
                 utils.printout(conf.flog, 'Generating html visualization ...')
                 sublist = 'input_pc,gripper_img_target,info'
-                cmd = 'cd %s && python %s . 10 htmls %s %s > /dev/null' % (out_dir, os.path.join(BASE_DIR, 'gen_html_hierachy_local.py'), sublist, sublist)
+                cmd = 'cd %s && python %s . 10 htmls %s %s ' % (out_dir, os.path.join(BASE_DIR, 'gen_html_hierachy_local.py'), sublist, sublist)
                 call(cmd, shell=True)
                 utils.printout(conf.flog, 'DONE')
 
@@ -424,7 +326,6 @@ if __name__ == '__main__':
     parser.add_argument('--val_data_dir', type=str, help='data directory')
     parser.add_argument('--val_data_fn', type=str, help='data directory', default='data_tuple_list_val_subset.txt')
     parser.add_argument('--train_shape_fn', type=str, help='training shape file that indexs all shape-ids')
-    parser.add_argument('--pretrained_critic_ckpt', type=str, help='pretrained_critic_ckpt', default=None)
     parser.add_argument('--ins_cnt_fn', type=str, help='a file listing all category instance count')
 
     # main parameters (optional)
@@ -442,8 +343,6 @@ if __name__ == '__main__':
     parser.add_argument('--abs_thres', type=float, default=0.01, help='abs thres')
     parser.add_argument('--rel_thres', type=float, default=0.5, help='rel thres')
     parser.add_argument('--dp_thres', type=float, default=0.5, help='dp thres')
-    parser.add_argument('--rv_dim', type=int, default=10)
-    parser.add_argument('--rv_cnt', type=int, default=100)
     parser.add_argument('--no_true_false_equal', action='store_true', default=False, help='if make the true/false data loaded equally [default: False]')
 
     # training parameters
@@ -460,9 +359,6 @@ if __name__ == '__main__':
     parser.add_argument('--sample_succ', action='store_true', default=False)
 
     # loss weights
-    parser.add_argument('--loss_weight_critic', type=float, default=1.0, help='loss weight')
-    parser.add_argument('--loss_weight_actor_coverage', type=float, default=1.0, help='loss weight')
-    parser.add_argument('--loss_weight_action_score', type=float, default=100.0, help='loss weight')
 
     # logging
     parser.add_argument('--no_tb_log', action='store_true', default=False)
@@ -481,7 +377,7 @@ if __name__ == '__main__':
     ### prepare before training
     # make exp_name
     conf.exp_name = f'exp-{conf.model_version}-{conf.primact_type}-{conf.category_types}-{conf.exp_suffix}'
-        
+
     if conf.overwrite and conf.resume:
         raise ValueError('ERROR: cannot specify both --overwrite and --resume!')
 
@@ -586,7 +482,7 @@ if __name__ == '__main__':
             if int(item.split('_')[-1]) < conf.num_interaction_data_offline:
                 train_data_list.append(item)
         utils.printout(flog, 'len(train_data_list): %d' % len(train_data_list))
- 
+    
     with open(os.path.join(conf.val_data_dir, conf.val_data_fn), 'r') as fin:
         val_data_list = [os.path.join(conf.val_data_dir, l.rstrip()) for l in fin.readlines()]
     utils.printout(flog, 'len(val_data_list): %d' % len(val_data_list))
